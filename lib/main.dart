@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
-import 'firebase_options.dart';
-// ignore: depend_on_referenced_packages
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/intro_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:starter/features/auth/presentation/pages/login_page.dart';
+import 'package:starter/firebase_options.dart';
 
 void main() async {
+  //Firebase Setup
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
@@ -17,9 +17,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Auth Template',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const IntroScreen(),
+      title: 'Learn Flutter & Firebase',
+      home: LoginPage(),
     );
   }
 }
