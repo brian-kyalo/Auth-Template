@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "957580394988",
+    "project_id": "prostarter-fc3a8",
+    "storage_bucket": "prostarter-fc3a8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:957580394988:android:4692c392cce00266ea40c9",
+        "android_client_info": {
+          "package_name": "com.example.starter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "957580394988-rmvie5vlgb5l5e5k4jutdjvhqnlpau84.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.starter",
+            "certificate_hash": "c324c61d1256e711e6a49150cc981afefcc9350e"
+          }
+        },
+        {
+          "client_id": "957580394988-8rh9e3fm5tusskvugol3dnu9g2a0k20n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApudmjGd6yIfulZ_TMPy1uwLxEvnfvw2E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "957580394988-8rh9e3fm5tusskvugol3dnu9g2a0k20n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
