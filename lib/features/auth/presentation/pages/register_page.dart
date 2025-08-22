@@ -1,49 +1,64 @@
-/*
- * This is a basic login page without OAuth or 2 factor authentication.
- * A User Logs in and is directed directly to the homepage.
- */
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:starter/features/auth/presentation/components/my_button.dart';
 import 'package:starter/features/auth/presentation/components/my_textfield.dart';
 import 'package:starter/features/auth/presentation/cubits/auth_cubit.dart';
 
-class LoginPage extends StatefulWidget {
+class RegisterPage extends StatefulWidget {
   final void Function()? togglePages;
-  const LoginPage({super.key, this.togglePages});
+  const RegisterPage({super.key, this.togglePages});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   final emailController = TextEditingController();
+  final confirmPassController = TextEditingController();
   final passwordController = TextEditingController();
+  final nameController = TextEditingController();
 
-  //Login Button functionallity.
-  void login() {
-    //prep email and password.
+  //Register button pressed
+  void register() {
+    //info
+    final String name = nameController.text;
     final String email = emailController.text;
     final String password = passwordController.text;
+    final String confirmpass = confirmPassController.text;
 
-    //AuthCubit
+    //Auth cubit
     final authCubit = context.read<AuthCubit>();
 
-    //Ensure all fields are field
-    if (email.isNotEmpty && password.isNotEmpty) {
-      //Login
-      authCubit.login(email, password);
-    }
-    //Fields are empty
-    else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please enter both email & password")),
-      );
+    //Ensure fields are not empty
+    if (email.isNotEmpty &&
+        name.isNotEmpty &&
+        password.isNotEmpty &&
+        confirmpass.isNotEmpty) {
+      //Ensure pass match
+      if (password == confirmpass) {
+        authCubit.register(name, email, password);
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Passwords dont match!")));
+      }
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Please fill all fields!")));
     }
   }
 
-  //Login-UI
+  @override
+  void dispose() {
+    nameController.dispose();
+    passwordController.dispose();
+    confirmPassController.dispose();
+    emailController.dispose();
+    super.dispose();
+  }
+
+  //Register-UI
   @override
   Widget build(BuildContext context) {
     //Scaffold
@@ -56,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               //
-              const SizedBox(height: 15),
+              const SizedBox(height: 8),
               //Logo
               Image.asset(
                 width: 320,
@@ -67,9 +82,16 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               //Spacing
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
 
-              //Name app
+              //Name pass textfield
+              MyTextfield(
+                controller: nameController,
+                hintText: "Name",
+                obscureText: false,
+              ),
+
+              const SizedBox(height: 8),
 
               //Email pass textfield
               MyTextfield(
@@ -79,7 +101,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               //Spacing
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
 
               //pass textfield
               MyTextfield(
@@ -89,27 +111,20 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               //Spacing
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
 
-              //Forgot Password
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    "Forgot Password?",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.outline,
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                ],
+              //pass textfield confirm
+              MyTextfield(
+                controller: confirmPassController,
+                hintText: "Confirm Password",
+                obscureText: true,
               ),
 
               //Spacing
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
 
               //Login Button
-              MyButton(onTap: login, text: "LOGIN"),
+              MyButton(onTap: register, text: "SIGN UP"),
 
               //
               const SizedBox(height: 4),
@@ -119,7 +134,7 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Dont have an account? ",
+                    "Already have an account? ",
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.outline,
                     ),
@@ -128,9 +143,9 @@ class _LoginPageState extends State<LoginPage> {
                   GestureDetector(
                     onTap: widget.togglePages,
                     child: Text(
-                      " Sign-Up now!",
+                      " Sign-in now!",
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.outline,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                   ),
