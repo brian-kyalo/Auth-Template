@@ -153,6 +153,7 @@ class FirebaseAuthRepo implements AuthRepo {
         verificationCompleted: (PhoneAuthCredential credential) {
           // This callback is called when auto-verification completes
           // For MFA enrollment, we still need the verification ID
+          // ignore: avoid_print
           print('Auto verification completed');
         },
         verificationFailed: (FirebaseAuthException e) {
@@ -163,6 +164,7 @@ class FirebaseAuthRepo implements AuthRepo {
         },
         codeAutoRetrievalTimeout: (String verificationId) {
           // This is called when auto-retrieval times out
+          // ignore: avoid_print
           print('Code auto-retrieval timeout');
         },
         multiFactorSession: session,
