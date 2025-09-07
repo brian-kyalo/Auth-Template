@@ -4,12 +4,16 @@ class MyTextfield extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final bool obscureText;
+  final TextInputType? keyboardType; // optional
+  final int? maxLength; // optional
 
   const MyTextfield({
     super.key,
     required this.controller,
     required this.hintText,
     required this.obscureText,
+    this.keyboardType,
+    this.maxLength,
   });
 
   @override
@@ -17,8 +21,10 @@ class MyTextfield extends StatelessWidget {
     return TextField(
       controller: controller,
       obscureText: obscureText,
+      keyboardType: keyboardType,
+      maxLength: maxLength,
       decoration: InputDecoration(
-        //border when selected
+        // border when selected
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(
@@ -27,7 +33,7 @@ class MyTextfield extends StatelessWidget {
           ),
         ),
 
-        //boreder when unselected
+        // border when unselected
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(
@@ -41,6 +47,7 @@ class MyTextfield extends StatelessWidget {
         hintStyle: TextStyle(
           color: Theme.of(context).colorScheme.inversePrimary,
         ),
+        counterText: "", // hide counter if you don’t want it
       ),
     );
   }

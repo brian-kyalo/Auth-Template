@@ -6,6 +6,8 @@ import 'package:starter/features/auth/presentation/components/loading.dart';
 import 'package:starter/features/auth/presentation/cubits/auth_cubit.dart';
 import 'package:starter/features/auth/presentation/cubits/auth_state.dart';
 import 'package:starter/features/auth/presentation/pages/auth_page.dart';
+import 'package:starter/features/auth/presentation/pages/mfa_enrollment_page.dart';
+import 'package:starter/features/auth/presentation/pages/mfa_verification_page.dart';
 import 'package:starter/features/home/presentation/pages/home_page.dart';
 import 'package:starter/firebase_options.dart';
 import 'package:starter/themes/dark_mode.dart';
@@ -44,17 +46,24 @@ class MyApp extends StatelessWidget {
             // ignore: avoid_print
             print(state);
             // unauthenticated -> auth page login/register
+            //authenticated -> homepage
+            //loading
+            if (state is AuthLoading || state is Authinitial) {
+              return const Center(child: Loading());
+            }
             if (state is Unauthenticated) {
               return const AuthPage();
             }
-            //authenticated -> homepage
             if (state is Authenticated) {
               return const HomePage();
             }
-            //loading
-            else {
-              return const Loading();
+            if (state is MFARegistrationRequired) {
+              return MfaEnrollmentPage(user: state.user);
             }
+            if (state is MFAVerificationRequired) {
+              return const MFAVerificationPage();
+            }
+            return const AuthPage();
           },
           listener: (context, state) {
             if (state is AuthError) {

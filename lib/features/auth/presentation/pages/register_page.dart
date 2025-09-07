@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:starter/features/auth/presentation/components/my_button.dart';
 import 'package:starter/features/auth/presentation/components/my_textfield.dart';
 import 'package:starter/features/auth/presentation/cubits/auth_cubit.dart';
@@ -67,91 +67,93 @@ class _RegisterPageState extends State<RegisterPage> {
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 25.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              //
-              const SizedBox(height: 8),
-              //Logo
-              Image.asset(
-                width: 320,
-                height: 320,
-                Theme.of(context).brightness == Brightness.dark
-                    ? 'assets/2.png' // Darkmode logo.
-                    : 'assets/1.png', // Lighmode logo.
-              ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                //
+                const SizedBox(height: 8),
+                //Logo
+                Image.asset(
+                  width: 320,
+                  height: 320,
+                  Theme.of(context).brightness == Brightness.dark
+                      ? 'assets/2.png' // Darkmode logo.
+                      : 'assets/1.png', // Lighmode logo.
+                ),
 
-              //Spacing
-              const SizedBox(height: 8),
+                //Spacing
+                const SizedBox(height: 8),
 
-              //Name pass textfield
-              MyTextfield(
-                controller: nameController,
-                hintText: "Name",
-                obscureText: false,
-              ),
+                //Name pass textfield
+                MyTextfield(
+                  controller: nameController,
+                  hintText: "Name",
+                  obscureText: false,
+                ),
 
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
 
-              //Email pass textfield
-              MyTextfield(
-                controller: emailController,
-                hintText: "Email",
-                obscureText: false,
-              ),
+                //Email pass textfield
+                MyTextfield(
+                  controller: emailController,
+                  hintText: "Email",
+                  obscureText: false,
+                ),
 
-              //Spacing
-              const SizedBox(height: 8),
+                //Spacing
+                const SizedBox(height: 8),
 
-              //pass textfield
-              MyTextfield(
-                controller: passwordController,
-                hintText: "Password",
-                obscureText: true,
-              ),
+                //pass textfield
+                MyTextfield(
+                  controller: passwordController,
+                  hintText: "Password",
+                  obscureText: true,
+                ),
 
-              //Spacing
-              const SizedBox(height: 8),
+                //Spacing
+                const SizedBox(height: 8),
 
-              //pass textfield confirm
-              MyTextfield(
-                controller: confirmPassController,
-                hintText: "Confirm Password",
-                obscureText: true,
-              ),
+                //pass textfield confirm
+                MyTextfield(
+                  controller: confirmPassController,
+                  hintText: "Confirm Password",
+                  obscureText: true,
+                ),
 
-              //Spacing
-              const SizedBox(height: 8),
+                //Spacing
+                const SizedBox(height: 8),
 
-              //Login Button
-              MyButton(onTap: register, text: "SIGN UP"),
+                //Login Button
+                MyButton(onTap: register, text: "SIGN UP"),
 
-              //
-              const SizedBox(height: 4),
+                //
+                const SizedBox(height: 4),
 
-              // Dont have an account...
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Already have an account? ",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-
-                  GestureDetector(
-                    onTap: widget.togglePages,
-                    child: Text(
-                      " Sign-in now!",
+                // Dont have an account...
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Already have an account? ",
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: Theme.of(context).colorScheme.outline,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+
+                    GestureDetector(
+                      onTap: widget.togglePages,
+                      child: Text(
+                        " Sign-in now!",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
