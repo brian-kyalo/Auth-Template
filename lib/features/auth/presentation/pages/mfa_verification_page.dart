@@ -14,17 +14,26 @@ class MFAVerificationPage extends StatefulWidget {
 }
 
 class _MFAVerificationPageState extends State<MFAVerificationPage> {
-  int? _selectedIndex;
   final _codeController = TextEditingController();
   String? _verificationId;
   bool _loading = false;
   String? _error;
+  int _selectedHintIndex = 0;
+  List<String> _hints = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('MFA Verification')),
-      body: BlocListener<AuthCubit, AuthState>(
+      appBar: AppBar(
+        title: const Text('Verify MFA'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            context.read<AuthCubit>().returnToAuth();
+          },
+        ),
+      ),
+      body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
             Navigator.pushReplacement(
@@ -36,86 +45,138 @@ class _MFAVerificationPageState extends State<MFAVerificationPage> {
               _error = state.message;
               _loading = false;
             });
+          } else if (state is Unauthenticated) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          } else if (state is MFAVerificationRequired) {
+            setState(() {
+              _hints = state.hints;
+              if (_hints.isNotEmpty && _selectedHintIndex >= _hints.length) {
+                _selectedHintIndex = 0;
+              }
+            });
           }
         },
-        child: BlocBuilder<AuthCubit, AuthState>(
-          builder: (context, state) {
-            if (state is! MFAVerificationRequired)
-              return const SizedBox.shrink();
-            final hints = state.hints;
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.verified, size: 64, color: Colors.blue),
+        builder: (context, state) {
+          if (state is! MFAVerificationRequired) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.security, size: 64, color: Colors.blue),
+                const SizedBox(height: 16),
+                Text(
+                  'Multi-Factor Authentication',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Enter the code sent to your registered phone number',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                if (_hints.length > 1) ...[
+                  Text(
+                    'Select phone number:',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButton<int>(
+                    value: _selectedHintIndex,
+                    isExpanded: true,
+                    items: _hints.asMap().entries.map((entry) {
+                      return DropdownMenuItem(
+                        value: entry.key,
+                        child: Text(entry.value),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _selectedHintIndex = value;
+                          _verificationId = null; // Reset verification
+                          _codeController.clear();
+                        });
+                      }
+                    },
+                  ),
                   const SizedBox(height: 16),
-                  const Text('Select Phone', style: TextStyle(fontSize: 20)),
+                ] else if (_hints.isNotEmpty) ...[
+                  Text(
+                    'Code will be sent to: ${_hints[0]}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                   const SizedBox(height: 16),
-                  if (_verificationId == null)
-                    Column(
-                      children: [
-                        ...hints.asMap().entries.map(
-                          (e) => RadioListTile<int>(
-                            value: e.key,
-                            groupValue: _selectedIndex,
-                            title: Text(
-                              '****${e.value.substring(e.value.length - 4)}',
-                            ),
-                            onChanged: (idx) =>
-                                setState(() => _selectedIndex = idx),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        MyButton(
-                          onTap: _selectedIndex == null || _loading
-                              ? null
-                              : _sendCode,
-                          text: _loading ? 'Sending...' : 'Send Code',
-                        ),
-                      ],
-                    )
-                  else
-                    Column(
-                      children: [
-                        MyTextfield(
-                          controller: _codeController,
-                          hintText: 'SMS Code',
-                          obscureText: false,
-                          keyboardType: TextInputType.number,
-                          maxLength: 6,
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            TextButton(
-                              onPressed: _resend,
-                              child: const Text('Resend'),
-                            ),
-                            MyButton(
-                              onTap: _loading ? null : _verify,
-                              text: _loading ? 'Verifying...' : 'Verify',
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  if (_error != null)
-                    Text(_error!, style: const TextStyle(color: Colors.red)),
                 ],
-              ),
-            );
-          },
-        ),
+                if (_verificationId == null)
+                  MyButton(
+                    onTap: _loading ? null : _sendCode,
+                    text: _loading ? 'Sending...' : 'Send Code',
+                  )
+                else
+                  Column(
+                    children: [
+                      MyTextfield(
+                        controller: _codeController,
+                        hintText: 'Enter 6-digit code',
+                        obscureText: false,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          TextButton(
+                            onPressed: _resend,
+                            child: const Text('Resend'),
+                          ),
+                          MyButton(
+                            onTap: _loading ? null : _verify,
+                            text: _loading ? 'Verifying...' : 'Verify',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                if (_error != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(color: Colors.red.shade700),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
   Future<void> _sendCode() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
     await context.read<AuthCubit>().sendLoginCode(
-      _selectedIndex!,
+      _selectedHintIndex,
       onCodeSent: (id, _) {
         setState(() {
           _verificationId = id;
@@ -132,17 +193,20 @@ class _MFAVerificationPageState extends State<MFAVerificationPage> {
   }
 
   Future<void> _verify() async {
-    if (_codeController.text.length != 6 ||
-        _verificationId == null ||
-        _selectedIndex == null) {
-      setState(() => _error = 'Invalid code');
+    if (_codeController.text.length != 6 || _verificationId == null) {
+      setState(() => _error = 'Please enter a valid 6-digit code');
       return;
     }
-    setState(() => _loading = true);
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
     await context.read<AuthCubit>().verifyMFA(
       _codeController.text,
       _verificationId!,
-      _selectedIndex!,
+      _selectedHintIndex,
     );
   }
 
@@ -150,6 +214,7 @@ class _MFAVerificationPageState extends State<MFAVerificationPage> {
     setState(() {
       _verificationId = null;
       _codeController.clear();
+      _error = null;
     });
   }
 

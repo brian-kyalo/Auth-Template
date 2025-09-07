@@ -146,22 +146,30 @@ class FirebaseAuthRepo implements AuthRepo {
     required void Function(String verificationId, int? resendToken) onCodeSent,
     required void Function(String error) onError,
   }) async {
-    await firebaseAuth.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      timeout: const Duration(seconds: 60),
-      verificationCompleted: (PhoneAuthCredential credential) {
-        // Auto verification not typically used for MFA, but handle anyway
-        onCodeSent('auto', null);
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        onError(e.message ?? 'Verification failed');
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        onCodeSent(verificationId, resendToken);
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {},
-      multiFactorSession: session,
-    );
+    try {
+      await firebaseAuth.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (PhoneAuthCredential credential) {
+          // This callback is called when auto-verification completes
+          // For MFA enrollment, we still need the verification ID
+          print('Auto verification completed');
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          onError(e.message ?? 'Verification failed');
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          onCodeSent(verificationId, resendToken);
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          // This is called when auto-retrieval times out
+          print('Code auto-retrieval timeout');
+        },
+        multiFactorSession: session,
+      );
+    } catch (e) {
+      onError('Failed to send enrollment code: ${e.toString()}');
+    }
   }
 
   // MFA: Send login code

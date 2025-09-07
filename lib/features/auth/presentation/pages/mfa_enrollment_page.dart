@@ -25,7 +25,16 @@ class _MfaEnrollmentPageState extends State<MfaEnrollmentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Setup MFA')),
+      appBar: AppBar(
+        title: const Text('Setup MFA'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // Show confirmation dialog before going back
+            _showBackConfirmationDialog();
+          },
+        ),
+      ),
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
@@ -38,6 +47,8 @@ class _MfaEnrollmentPageState extends State<MfaEnrollmentPage> {
               _error = state.message;
               _loading = false;
             });
+          } else if (state is Unauthenticated) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
           }
         },
         child: Padding(
@@ -50,6 +61,14 @@ class _MfaEnrollmentPageState extends State<MfaEnrollmentPage> {
               Text(
                 'Add Phone for ${widget.user.email}',
                 style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Multi-factor authentication adds an extra layer of security',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
               if (_verificationId == null)
@@ -70,6 +89,12 @@ class _MfaEnrollmentPageState extends State<MfaEnrollmentPage> {
               else
                 Column(
                   children: [
+                    Text(
+                      'Enter the 6-digit code sent to ${_phoneController.text}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
                     MyTextfield(
                       controller: _codeController,
                       hintText: 'SMS Code',
@@ -93,8 +118,22 @@ class _MfaEnrollmentPageState extends State<MfaEnrollmentPage> {
                     ),
                   ],
                 ),
-              if (_error != null)
-                Text(_error!, style: const TextStyle(color: Colors.red)),
+              if (_error != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(color: Colors.red.shade700),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -107,7 +146,18 @@ class _MfaEnrollmentPageState extends State<MfaEnrollmentPage> {
       setState(() => _error = 'Please enter a phone number');
       return;
     }
-    setState(() => _loading = true);
+    if (!_phoneController.text.startsWith('+')) {
+      setState(
+        () => _error = 'Phone number must include country code (+254...)',
+      );
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
     await context.read<AuthCubit>().sendEnrollmentCode(
       _phoneController.text,
       onCodeSent: (id, _) {
@@ -127,10 +177,15 @@ class _MfaEnrollmentPageState extends State<MfaEnrollmentPage> {
 
   Future<void> _verify() async {
     if (_codeController.text.length != 6 || _verificationId == null) {
-      setState(() => _error = 'Invalid code');
+      setState(() => _error = 'Please enter a valid 6-digit code');
       return;
     }
-    setState(() => _loading = true);
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
     await context.read<AuthCubit>().enrollMFA(
       _phoneController.text,
       _codeController.text,
@@ -142,7 +197,36 @@ class _MfaEnrollmentPageState extends State<MfaEnrollmentPage> {
     setState(() {
       _verificationId = null;
       _codeController.clear();
+      _error = null;
     });
+  }
+
+  void _showBackConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Skip MFA Setup?'),
+          content: const Text(
+            'Multi-factor authentication provides additional security for your account. Are you sure you want to skip this step?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Continue Setup'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.read<AuthCubit>().returnToAuth();
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Skip for Now'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

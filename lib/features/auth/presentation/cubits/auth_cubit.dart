@@ -120,12 +120,19 @@ class AuthCubit extends Cubit<AuthState> {
         smsCode: smsCode,
         verificationId: verificationId,
       );
-      if (_currentUser != null) {
-        _currentUser = _currentUser!.copyWith(hasMFA: true);
-        emit(Authenticated(_currentUser!));
+      //
+      final user = await authRepo.getCurrentUser();
+      if (user != null) {
+        _currentUser = user;
+        emit(Authenticated(user));
+      } else {
+        emit(Unauthenticated());
       }
     } catch (e) {
       emit(AuthError(e.toString()));
+      if (_currentUser != null) {
+        emit(MFARegistrationRequired(_currentUser!));
+      }
     }
   }
 
@@ -135,21 +142,34 @@ class AuthCubit extends Cubit<AuthState> {
     int selectedHintIndex,
   ) async {
     if (state is! MFAVerificationRequired) return;
+
+    // Store the MFA state before emitting AuthLoading
+    final mfaState = state as MFAVerificationRequired;
     emit(AuthLoading());
     try {
-      final mfaState = state as MFAVerificationRequired;
       await authRepo.verifyMFA(
         resolver: mfaState.resolver,
         smsCode: smsCode,
         verificationId: verificationId,
         selectedHintIndex: selectedHintIndex,
       );
-      if (_currentUser != null) {
-        _currentUser = _currentUser!.copyWith(hasMFA: true);
-        emit(Authenticated(_currentUser!));
+      // After a successful MFA verification, get the updated user
+      final user = await authRepo.getCurrentUser();
+      if (user != null) {
+        _currentUser = user;
+        emit(Authenticated(user));
+      } else {
+        emit(Unauthenticated());
       }
     } catch (e) {
       emit(AuthError(e.toString()));
+      //
+      emit(
+        MFAVerificationRequired(
+          resolver: mfaState.resolver,
+          hints: mfaState.hints,
+        ),
+      );
     }
   }
 
@@ -159,9 +179,13 @@ class AuthCubit extends Cubit<AuthState> {
     required void Function(String) onError,
   }) async {
     try {
-      final session = await authRepo.getCurrentUser() != null
-          ? await authRepo.getMultifactorSession()
-          : throw Exception('No user');
+      final currentUser = await authRepo.getCurrentUser();
+      if (currentUser == null) {
+        onError('No User Signed in.');
+        return;
+      }
+      //
+      final session = await authRepo.getMultifactorSession();
       await authRepo.sendEnrollmentCode(
         phoneNumber: phoneNumber,
         session: session,
@@ -169,8 +193,12 @@ class AuthCubit extends Cubit<AuthState> {
         onError: onError,
       );
     } catch (e) {
-      onError(e.toString());
+      onError('Failed to send enrollment code: ${e.toString()}');
     }
+  }
+
+  void returnToAuth() {
+    emit(Unauthenticated());
   }
 
   Future<void> sendLoginCode(
@@ -178,7 +206,11 @@ class AuthCubit extends Cubit<AuthState> {
     required void Function(String, int? resendToken) onCodeSent,
     required void Function(String) onError,
   }) async {
-    if (state is! MFAVerificationRequired) return;
+    if (state is! MFAVerificationRequired) {
+      onError('Invalid state for sending login code');
+      return;
+    }
+
     try {
       final mfaState = state as MFAVerificationRequired;
       final hint =
